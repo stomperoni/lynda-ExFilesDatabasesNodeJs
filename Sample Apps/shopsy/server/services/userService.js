@@ -27,7 +27,7 @@ async function update(userId, data) {
 
 async function remove(userId) {
   const result = await UserModel.remove({ _id: userId });
-  return result.result.n;
+  return result.n;
 }
 
 module.exports = {
