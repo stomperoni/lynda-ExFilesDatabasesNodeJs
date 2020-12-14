@@ -8,4 +8,8 @@ module.exports = {
   mongodb: {
     dsn: 'mongodb://localhost:37017/shopsy',
   },
+  redis: {
+    options: { port: 6388 },
+
+  },
 };
