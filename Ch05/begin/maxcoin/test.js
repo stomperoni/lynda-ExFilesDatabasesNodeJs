@@ -1,7 +1,7 @@
 // request is a module that makes http calls easier
 const request = require('request');
 const redis = require('redis');
-
+const mysql = require('mysql2');
 const MongoClient = require('mongodb').MongoClient;
 
 const dsn = 'mongodb://localhost:37017/maxcoin';
@@ -65,7 +65,7 @@ function insertRedis(client, data, callback) {
     client.zadd(values, callback);
 }
 
-const redisClient = redis.createClient(7379);
+const redisClient = redis.createClient(6388);
 redisClient.on('connect', () => {
     console.time('redis');
     console.log('Successfully connected to redis');
@@ -85,4 +85,44 @@ redisClient.on('connect', () => {
             });
         })
     });
+});
+
+const connection = mysql.createConnection({
+  host: 'localhost',
+  port: 33068,
+  user: 'root',
+  password: 'root',
+  database: 'maxcoin',
+});
+
+function insertMySQL(connection, data, callback) {
+    const values = [];
+    const sql = 'INSERT INTO coinvalues (valuedate, coinvalue) VALUES ?';
+
+    Object.keys(data).forEach((key) => {
+      values.push([key, data[key]]);
+    });
+    connection.query(sql, [values], callback);
+}
+
+connection.connect((err) => {
+  if (err) throw err;
+  console.time('mysql');
+  console.log('Successfully connected to mysql');
+  
+  fetchFromAPI((err, data) => {
+    if (err) throw err;
+
+    insertMySQL(connection, data.bpi, (err, results, fields) => {
+        if (err) throw err;
+        console.log(`Successfully inserted ${results.affectedRows} documents into MySQL`);
+
+        connection.query('SELECT * FROM coinvalues ORDER BY coinvalue DESC LIMIT 0,1', (err, results, fields) => {
+            if (err) throw err;
+            console.log(`MySQL: The one month max value is ${results[0].coinvalue} and was reached on ${results[0].valuedate}`);
+            console.timeEnd('mysql');
+            connection.end();
+        });
+    });
+  });
 });
