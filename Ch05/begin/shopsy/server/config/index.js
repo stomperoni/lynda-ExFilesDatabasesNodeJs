@@ -9,6 +9,16 @@ module.exports = {
     dsn: 'mongodb://localhost:37017/shopsy',
   },
   redis: {
-    options: { port: 7379 },
+    options: { port: 6388 },
+  },
+  mysql: {
+    options: {
+      host: 'localhost',
+      port: 33068,
+      database: 'shopsy',
+      dialect: 'mysql',
+      username: 'root',
+      password: 'root',
+    },
   },
 };
