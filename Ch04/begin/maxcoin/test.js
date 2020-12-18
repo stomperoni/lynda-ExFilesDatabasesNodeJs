@@ -1,5 +1,6 @@
 // request is a module that makes http calls easier
 const request = require('request');
+const redis = require('redis');
 
 const MongoClient = require('mongodb').MongoClient;
 
@@ -54,4 +55,35 @@ MongoClient.connect(dsn, (err, db) => {
     });
 });
 
+function insertRedis(client, data, callback) {
+    const values = ['values'];
 
+    Object.keys(data).forEach((key) => {
+        values.push(data[key]);
+        values.push(key);
+    });
+    client.zadd(values, callback);
+}
+
+const redisClient = redis.createClient(6388);
+redisClient.on('connect', () => {
+  console.time('redis');
+  console.log('Successfully connected to Redis');
+
+  fetchFromAPI((err, data) => {
+    if (err) throw err;
+
+    insertRedis(redisClient,data.bpi, (err, results) => {
+      if (err) throw err;
+      console.log(`Successfully inserted ${results} key/value pairs into redis`);
+      redisClient.zrange('values', -1, -1, 'withscores', (err, result) => {
+        if (err) throw err;
+        console.log(`Redis: The one month value is ${result[1]} and it was reached on ${result[0]}`);
+        console.timeEnd('redis');
+        redisClient.end();
+      });
+
+    });
+  });
+
+});
